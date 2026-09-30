@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 import requests
@@ -52,14 +53,41 @@ def average_rating_by_language(totals):
             for language, (rating_sum, count) in totals.items()}
 
 
-def main():
-    records = fetch_records(SOURCE_URL)
-    print(f"Downloaded {len(records)} shows.")
-    print(shows_per_genre(records))
-    print(shows_without_genre(records))
+def count_unrated(records):
+    """Return how many shows have no average rating."""
+    return sum(1 for show in records
+               if (show.get("rating") or {}).get("average") is None)
+
+
+def build_summary(records):
+    """Combine the aggregations into one dict ready to write."""
     totals = rating_totals_by_language(records)
-    print(average_rating_by_language(totals))
-    
+    return {
+        "source_url": SOURCE_URL,
+        "records_processed": len(records),
+        "shows_per_genre": shows_per_genre(records),
+        "shows_without_genre": shows_without_genre(records),
+        "average_rating_by_language": average_rating_by_language(totals),
+        "unrated_shows": count_unrated(records),
+    }
+
+
+def write_summary(summary, path):
+    """Write the summary to a JSON file."""
+    path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+
+def main():
+    try:
+        records = fetch_records(SOURCE_URL)
+    except requests.RequestException as error:
+        sys.exit(f"Could not download data from {SOURCE_URL}: {error}")
+
+    summary = build_summary(records)
+    write_summary(summary, OUTPUT)
+    print(f"Processed {summary['records_processed']} shows.")
+    print(f"Summary written to {OUTPUT}")
+
 
 if __name__ == "__main__":
     main()
