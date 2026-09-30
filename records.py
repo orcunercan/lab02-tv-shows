@@ -14,6 +14,7 @@ def fetch_records(url):
     response.raise_for_status()
     return response.json()
 
+
 def shows_per_genre(records):
     """Return a dict mapping each genre to the number of shows in it.
 
@@ -30,6 +31,7 @@ def shows_per_genre(records):
 def shows_without_genre(records):
     """Return the names of shows that have no genre listed."""
     return [show["name"] for show in records if not show.get("genres")]
+
 
 def rating_totals_by_language(records):
     """Return a dict mapping each language to a (rating_sum, count) tuple.
